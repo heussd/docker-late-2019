@@ -17,6 +17,8 @@ img[alt="lazydocker"] { width: 70%}
 
 # Docker Late 2019
 
+Timm Heuss<br/>
+[https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
 
 ---
 
@@ -44,7 +46,6 @@ img[alt="lazydocker"] { width: 70%}
 - Multi-Architecture Images
 - Useful Tools: dive, lazydocker, dcc
 - Hands-on Session
-
 
 
 </div>
@@ -177,9 +178,6 @@ volumes are not easily explorable / transferable to different hosts
 ~~~yml
 services:
   service:
-
-	[...]
-
     volumes:
       - type: bind
         source: ${PWD}/data/
@@ -683,10 +681,65 @@ Builds and launches docker-compose services, monitors their output using multita
 
 Demo Scenario: Publishing a Markdown file as static webpage with two dependencies
 
-1. Clone md-page
-2. Clone my-way-to-view-things
-3. Combine Readme.md + script + CSS
+1. Clone [md-page](https://github.com/oscarmorrison/md-page) - JS that converts Markdown to HTML on the fly
+2. Clone [my-way-to-view-things](https://github.com/heussd/my-way-to-view-things) - Timm's prefered CSS for text reading
+3. Combine Readme.md + JS + CSS
 4. Serve in static Web server
+
+----
+### We start with a Dockerfile like this
+
+~~~dockerfile
+FROM ubuntu
+
+# Install requirements
+RUN   apt-get update && apt-get install -y git lighttpd
+
+WORKDIR /var/www/html/
+
+# Pull dependencies
+RUN     git clone https://github.com/oscarmorrison/md-page
+RUN		git clone https://github.com/heussd/my-way-to-view-things
+
+# Copy sources
+COPY	img ./img/
+COPY    Readme.md ./
+
+# Build artifact
+RUN 	echo '<script src="md-page/md-page.js"></script><noscript>' > 'index.html' && \
+			echo '<link rel="stylesheet" type="text/css" href="my-way-to-view-things/text-reading.css" media="screen" />' >> 'index.html' && \
+			echo '' >> 'index.html' && \
+			cat "Readme.md" >> 'index.html'
+
+# Serve artifact
+CMD ["lighttpd", "-D", "-f", "/etc/lighttpd/lighttpd.conf"]
+~~~
+
+----
+### Deep-dive
+
+1. apt command
+	1. We see how many binaries are added for the git installation
+	1. We see the apt caches that are added
+1. clone command
+	1. We notice the `.git` folders
+
+
+----
+### Fixing the Dockerfile
+
+#### Replace the git commands
+~~~dockerfile
+FROM	alpine/git as git
+WORKDIR	/git
+RUN		git clone URL /git && \
+		git checkout -q "COMMIT"
+~~~
+
+	
+#### Introduce gostatic
+
+[https://hub.docker.com/r/pierrezemb/gostatic](https://hub.docker.com/r/pierrezemb/gostatic)
 
 ---
 ## A collection of my most favorite Docker inconsistencies
@@ -699,6 +752,6 @@ Demo Scenario: Publishing a Markdown file as static webpage with two dependencie
 		volumes:
 	      - type: bind
 - `docker-compose build` builds and tags the specifed image. `docker buildx bake` does the same, but with BuildKit.
-
+- Volumes persist writes during run, but forget writes during build. Writes during build are ignored silently without any warning. You cannot be sure what folder is an volume, as images can define arbitrary folders as volumes.
 
 
