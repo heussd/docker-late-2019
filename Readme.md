@@ -601,45 +601,6 @@ The container knows best how to monitor its health
 
 
 ---
-## Multi-Architecture Images
-
-![](img/docker-multi-architecture.png)
-
-Image Source: [https://engineering.docker.com/2019/04/multi-arch-images/](https://engineering.docker.com/2019/04/multi-arch-images/)
-
-----
-### Image Manifests
-
-![](img/docker-manifests.png)
-
-Image Source: [https://www.docker.com/blog/multi-arch-all-the-things/](https://www.docker.com/blog/multi-arch-all-the-things/)
-
-----
-### How manifest lists are shown
-
-![](img/dockerhub-newsboat.png)
-
-----
-### How manifests are shown
-
-![](img/dockerhub-datasette.png)
-
-----
-### How to use
-
-~~~makefile
-setup:
-	docker buildx create --name "nubuilder" --use
-build:
-	docker buildx build --platform linux/amd64,linux/arm/v7 -t $(IMAGE_NAME) --push .
-clean:
-	docker buildx rm nubuilder
-~~~
-
-No support for `docker-compose` or `bake` yet 😔
-
-
----
 
 ## Nice Tools
 
@@ -740,6 +701,72 @@ RUN		git clone URL /git && \
 #### Introduce gostatic
 
 [https://hub.docker.com/r/pierrezemb/gostatic](https://hub.docker.com/r/pierrezemb/gostatic)
+
+#### Build with BuildKit
+
+
+---
+## Demo Recap
+
+By following good practices and  🔥 Docker features, we drastically reduced build time and image size
+
+
+<div class="col">
+<div>
+<span style="font-size:85pt">97%</span><br/>
+
+size reduction
+</div>
+<div>
+<span style="font-size:85pt">91%</span><br/>
+
+build time reduction
+</div>
+</div>
+
+- Decreased the attack surface, build time and image size
+- Increase scalability and reproducability
+
+
+---
+## Multi-Architecture Images
+
+![](img/docker-multi-architecture.png)
+
+Image Source: [https://engineering.docker.com/2019/04/multi-arch-images/](https://engineering.docker.com/2019/04/multi-arch-images/)
+
+----
+### Image Manifests
+
+![](img/docker-manifests.png)
+
+Image Source: [https://www.docker.com/blog/multi-arch-all-the-things/](https://www.docker.com/blog/multi-arch-all-the-things/)
+
+----
+### How manifest lists are shown
+
+![](img/dockerhub-newsboat.png)
+
+----
+### How manifests are shown
+
+![](img/dockerhub-datasette.png)
+
+----
+### How to use
+
+~~~makefile
+setup:
+	docker buildx create --name "nubuilder" --use
+build:
+	docker buildx build --platform linux/amd64,linux/arm/v7 -t $(IMAGE_NAME) --push .
+clean:
+	docker buildx rm nubuilder
+~~~
+
+No support for `docker-compose` or `bake` yet 😔
+
+
 
 ---
 ## A collection of my most favorite Docker inconsistencies
