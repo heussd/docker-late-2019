@@ -1,0 +1,20 @@
+@import url("reveal.js/css/theme/black.css");
+
+.col {
+    display: flex;
+}
+.col div {
+    flex: 1;
+}
+
+.reveal {
+    font-family: 'Open Sans';
+    font-size: 2vw;
+}
+code {
+    font-family: 'Source Code Pro' !important;
+}
+
+img {
+   border: 0px !important;
+}
