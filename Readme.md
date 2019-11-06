@@ -9,16 +9,22 @@ img { background-color: transparent !important; width: 90%}
 
 img[alt="Hierarchy and Scope of Variables in Docker"] { width: 70%}
 img[alt="Yo Dawg I heard you like Equal Signs"] { width: 30%}
-
+img[alt="docker-logo"] { width: 40%}
+img[alt="docker-mounts"] { width: 60%}
 img[alt="dive"] { width: 70%}
 img[alt="lazydocker"] { width: 70%}
+img[alt="container"] { width: 60%}
 
 </style>
 
 # Docker Late 2019
+Things you should know about Docker, year 2019 edition.
 
 Timm Heuss<br/>
 [https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
+
+![docker-logo](img/horizontal_large.png)
+
 
 ---
 
@@ -34,22 +40,50 @@ Timm Heuss<br/>
 - Bind Mounts / Volumes
 - Handling Large Models
 - ARG vs. ENV vs. .env vs. env_file
+- Docker Secrets
 
 </div>
 
 <div>
 
-- Docker Secrets
 - ENTRYPOINT vs. CMD vs. RUN
 - BuildKit Mount Types / “Application Caching”
 - Multi-Stage Docker Images
-- Multi-Architecture Images
 - Useful Tools: dive, lazydocker, dcc
-- Hands-on Session
-
-
+- Multi-Architecture Images
+- Docker Inconsistencies
 </div>
 </div>
+
+🤚 Includes a hands-on session in which we interactively optimize an existing Dockerfile
+---
+<!-- .slide: data-background="1img/container-what-is-container.png" -->
+
+## Recap: What's Docker?
+
+![container](img/container-what-is-container.png)
+
+
+[https://www.docker.com/resources/what-container](https://www.docker.com/resources/what-container)
+
+----
+
+
+### Docker Vocabulary
+
+<img src='https://g.gravizo.com/svg?
+ digraph G {
+	 node [shape=plaintext,fontname="helvetica"]
+	 bgcolor="transparent";
+	 color="white";
+	 fontcolor="white";
+	 rankdir=LR;
+			Dockerfile -> build -> Image -> run -> Container
+			Image -> push -> "Docker Registry"
+			"Docker Registry" -> pull -> Image
+ }
+' style="width: 100% !important"/>
+
 
 ---
 
@@ -57,24 +91,26 @@ Timm Heuss<br/>
 
 BuildKit is a new building and packaging software for Docker
 
+- 🔥 Build caches & mount types
+- 🔥 Concurrent multistage builds
+- 🔥 Multi CPU architecture builds (e.g. linux/amd64, linux/arm)
 
-- Top Features:
-	- 🔥 Build caches & mount types
-	- 🔥 Concurrent multistage builds
-	- 🔥 Multi CPU architecture builds (e.g. linux/amd64, linux/arm)
 
-- Enabling BuildKit on your machine (Docker >= 18.09):
-	- Command line
+----
+### How to enable
+
+Enabling BuildKit on your machine (Docker >= 18.09):
+- Command line
+	
+		docker buildx
 		
-			docker buildx
-			
-	- Environment Variable
+- Environment Variable
+	
+		DOCKER_BUILDKIT=1
 		
-			DOCKER_BUILDKIT=1
-			
-	- Daemon config
+- Daemon config
 
-			{ "features": { "buildkit": true }}
+		{ "features": { "buildkit": true }}
 
 
 ---
@@ -99,7 +135,6 @@ In contrast to a widespread opinion, I don’t care about the number of layers y
 
 Standardized and reproducable definition of image name, runtime parameters, ports, volumes etc…
 
-#![](img/sticker-compose_striped.png)
 
 ----
 ### Via Command Line only
@@ -157,20 +192,23 @@ volumes:
 
 ## Bind Mounts and Volumes
 
-- **Bind Mounts** allow to share a file or folder with the host system:
-	- typically used for persisting database / index / setting files
-	- performance is “like native” at Linux (VFS), but “it depends” on macOS / Windows
-		- archiving consistency can be expensive on non-VFS-hosts
-		- since 17.04, we have more options to define consistency expectation:
-			- `consistent` - default, perfect consistency ⚠️
-			- `cached` - the host’s view is authoritative
-			- `delegated` - the container’s view is authoritative
+![docker-mounts](img/types-of-mounts-bind.png)
 
-- **Volumes** allow to persist a file or folder across container instances
-typically used for persisting (regenerated)  index / cache files
-volumes are not easily explorable / transferable to different hosts
+[https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/)
 
+----
+#### Bind Mounts
 
+Allow to share a file or folder with the host system
+
+- typically used for persisting database / index / setting files
+- Performance?!
+	- “like native” on Linux (VFS)
+	- “it depends” on macOS / Windows (non-VFS hosts)
+- since 17.04, we have more options to define consistency expectation:
+	- `consistent` - default, perfect consistency, can be expensive ⚠️
+	- `cached` - the host’s view is authoritative
+	- `delegated` - the container’s view is authoritative
 ----
 
 ### Verbose bind mount syntax 
@@ -185,6 +223,14 @@ services:
         consistency: cached
         read_only: true
 ~~~
+
+----
+#### Volumes
+
+allow to persist a file or folder across container instances
+- typically used for persisting (regenerated)  index / cache files
+- volumes are not easily explorable / transferable to different hosts
+
 
 ---
 
@@ -279,7 +325,6 @@ Handling secrets the _Docker way_ involves two steps:
 
 		services:
 		  service:
-		    [...]
 		    secrets:
 		      - my_secret
 		secrets:
@@ -314,24 +359,33 @@ file_env() {
 
 
 ## RUN, ENTRYPOINT, CMD
-- **RUN**
-	- Executed during build phase
-	- Commits a new layer to the Docker image
-	- Example: Install dependencies
-		
-			RUN apt-get install glibc
 
-- **ENTRYPOINT**
-	- Executed during ⚠️ run phase
-	- Example: Define a server start 
-	
-			ENTRYPOINT java /path/app.jar -startServer
+<div class="col">
+<div>
 
-- **CMD**
-	- Allows to augment `ENTRYPOINT` with addition parameters
-	- Example: Supply additional parameters that are depending on a specific setup
+**RUN**
+- Executed during build phase
+- Commits a new layer to the Docker image
+- Example: Install dependencies
 	
-			CMD -Xmx4G
+		RUN apt-get install glibc
+
+</div>
+<div>
+
+**ENTRYPOINT**
+- Executed during ⚠️ run phase
+- Example: Define a server start 
+
+		ENTRYPOINT java /app.jar -serve
+
+**CMD**
+- Allows to augment `ENTRYPOINT` with addition parameters
+- Example: Add additional parameters 
+
+		CMD -Xmx4G
+
+</div>
 
 ---
 
@@ -357,7 +411,7 @@ file_env() {
 - Suitable for large file dependencies or source code
 
 
-<br/><br/>
+----
 
 
 ### Cache mounts
