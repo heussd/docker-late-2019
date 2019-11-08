@@ -14,17 +14,32 @@ img[alt="docker-mounts"] { width: 60%}
 img[alt="dive"] { width: 70%}
 img[alt="lazydocker"] { width: 70%}
 img[alt="container"] { width: 60%}
+img[alt="dcc"] { width: 40% }
+img[alt="docker-pitfalls"] {
+	transform: rotate(180deg);
+	object-fit: cover;
+	object-position: 0 0;
+	width: 280px;
+	height: 200px;
+}
 
+.intro h1, .intro p, .intro a {
+	//color: white !important;
+	#text-shadow: 3px 3px 4px #1a1a1a
+}
+
+html.intro h1, p {
+	background-color: rgba(255,255,255,0.8);
+}
 </style>
 
-# Docker Late 2019
-Things you should know about Docker, year 2019 edition.
+<!-- .slide: data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
 
-Timm Heuss<br/>
+# Things you should know about Docker, Late 2019 edition
+
+by Timm Heuss
+
 [https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
-
-![docker-logo](img/horizontal_large.png)
-
 
 ---
 
@@ -51,18 +66,16 @@ Timm Heuss<br/>
 - Multi-Stage Docker Images
 - Useful Tools: dive, lazydocker, dcc
 - Multi-Architecture Images
-- Docker Inconsistencies
+- Docker Pitfalls
 </div>
 </div>
 
 🤚 Includes a hands-on session in which we interactively optimize an existing Dockerfile
 ---
-<!-- .slide: data-background="1img/container-what-is-container.png" -->
 
 ## Recap: What's Docker?
 
 ![container](img/container-what-is-container.png)
-
 
 [https://www.docker.com/resources/what-container](https://www.docker.com/resources/what-container)
 
@@ -74,13 +87,14 @@ Timm Heuss<br/>
 <img src='https://g.gravizo.com/svg?
  digraph G {
 	 node [shape=plaintext,fontname="helvetica"]
+	 edge [shape=plaintext,fontname="helvetica"]
 	 bgcolor="transparent";
 	 color="white";
-	 fontcolor="white";
 	 rankdir=LR;
-			Dockerfile -> build -> Image -> run -> Container
-			Image -> push -> "Docker Registry"
-			"Docker Registry" -> pull -> Image
+			Dockerfile -> Image [label="build"]
+			Image -> Container [label="run"]
+			Image -> "Docker Registry" [label="push"]
+			"Docker Registry" -> Image [label="pull"]
  }
 ' style="width: 100% !important"/>
 
@@ -307,6 +321,9 @@ They violate the **principle of least privilege** and the **principle of least a
 1. Environments are often printed for error reporting or debugging purposes
 1. Environments are inherited to all child-processes
 1. Misuse is too easy
+
+----
+![](img/docker-compose-passwords.png)
 
 ---
 ## Secrets
@@ -682,9 +699,7 @@ A simple terminal UI for both docker and docker-compose.
 ----
 ### dcc
 
-<video width="90%" controls>
-  <source src="img/dcc.mp4" type="video/mp4">
-</video>
+![dcc](img/dcc.gif)
 
 Builds and launches docker-compose services, monitors their output using multitail, opens exposed ports automatically in a browser.
 
@@ -823,16 +838,53 @@ No support for `docker-compose` or `bake` yet 😔
 
 
 ---
-## A collection of my most favorite Docker inconsistencies
+## Docker Pitfalls
 
-- `RUN` in `Dockerfiles` executes code and commits a new layer during **image build**, `docker run` executes **containers**.
-- **`ARGS`** are environment variables with the scope of the image build phase. Runtime arguments for a image can be specified using **`CMD`** (`Dockerfile`) or **`commands`** (docker-compose). Docker commands, in contrast, are command line parameters to the Docker binary (such as `docker images`)
-- docker-compose environment variables are ignored during build, even if you build with `docker-compose build`
-- [**Volumes** are different from **bind mounts**](https://docs.docker.com/storage/volumes/), but both are specified, used and maintained with the keyword **volumes**. **Bind mounts** are **volumes** of the **type bind** in docker-compose:
+![docker-pitfalls](img/horizontal_large.png)
+
+----
+
+### Terminology: Run 
+`RUN` in `Dockerfiles` executes code and commits a new layer during **image build**.
+
+`docker run` executes **containers**.
+
+----
+
+### Terminology: Arguments, Commands
+**`ARGS`** are environment variables with the scope of the image build phase.
+
+Runtime **arguments** for a image can be specified using **`CMD`** (`Dockerfile`) or **`commands`** (docker-compose).
+
+Docker **commands** are command line parameters to the Docker binary (such as `docker images`)
+
+----
+
+### Different builds
+
+docker environment variables are respected during build.
+
+docker-compose environment variables are ignored during build, even if you build with `docker-compose build`
+
+----
+
+### Terminology: Volumes and Mounts
+
+[**Volumes** are different from **bind mounts**](https://docs.docker.com/storage/volumes/), but both are specified, used and maintained with the keyword **volumes**.
+
+**Bind mounts** are **volumes** of the **type bind** in docker-compose:
 
 		volumes:
 	      - type: bind
-- `docker-compose build` builds and tags the specifed image. `docker buildx bake` does the same, but with BuildKit.
-- Volumes persist writes during run, but forget writes during build. Writes during build are ignored silently without any warning. You cannot be sure what folder is an volume, as images can define arbitrary folders as volumes.
+
+----
+
+### Volumes during build
+
+Volumes persist writes during run, but forget writes during build.
+
+Writes during build are ignored silently without any warning.
+
+You cannot be sure what folder is an volume, as images can define arbitrary folders as volumes.
 
 

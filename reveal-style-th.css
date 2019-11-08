@@ -17,4 +17,8 @@ code {
 
 img {
    border: 0px !important;
+   box-shadow: none !important;
+}
+h2, h3, h4, h5, h6 {
+	text-shadow: 1px 1px 1px #1a1a1a !important
 }
