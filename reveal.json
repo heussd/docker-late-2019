@@ -1,5 +1,6 @@
 {
     "controls": true,
     "transition":"slide",
-    "slideNumber": true
+    "slideNumber": true,
+    "loop": true
 }

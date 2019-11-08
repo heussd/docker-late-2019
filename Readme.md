@@ -19,8 +19,8 @@ img[alt="docker-pitfalls"] {
 	transform: rotate(180deg);
 	object-fit: cover;
 	object-position: 0 0;
-	width: 280px;
-	height: 200px;
+	width: 170px;
+	height: 120px;
 }
 
 .intro h1, .intro p, .intro a {
@@ -28,18 +28,18 @@ img[alt="docker-pitfalls"] {
 	#text-shadow: 3px 3px 4px #1a1a1a
 }
 
-html.intro h1, p {
+html.intro h1, html.intro p {
 	background-color: rgba(255,255,255,0.8);
 }
 </style>
 
 <!-- .slide: data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
 
-# Things you should know about Docker, Late 2019 edition
+# Docker Late 2019
 
 by Timm Heuss
 
-[https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
+<!--![](img/qr.png)--->
 
 ---
 
@@ -95,6 +95,9 @@ by Timm Heuss
 			Image -> Container [label="run"]
 			Image -> "Docker Registry" [label="push"]
 			"Docker Registry" -> Image [label="pull"]
+			Container -> Service [arrowhead=none, style=dashed]
+			"Compose / Swarm" -> Service [label="describes"]
+			"Compose / Swarm" -> Image [label="refers"]
  }
 ' style="width: 100% !important"/>
 
