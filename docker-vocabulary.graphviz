@@ -1,0 +1,13 @@
+ digraph G {
+	 node [shape=plaintext,fontname="helvetica"]
+	 edge [shape=plaintext,fontname="helvetica"]
+	 bgcolor="transparent";
+	 color="white";
+	 rankdir=LR;
+			Dockerfile -> build -> "Docker Image" -> run -> "Docker Container"
+			"Docker Image" -> push -> "Docker Registry"
+			"Docker Registry" -> pull -> "Docker Image"
+			"Docker Container" -> Service [arrowhead=none, style=dashed]
+			"docker-compose.yml" -> describe -> Service
+			"docker-compose.yml" -> refer -> "Docker Image"
+ }

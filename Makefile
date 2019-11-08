@@ -7,3 +7,8 @@ submodule:
 install: submodule
 	npm install -g reveal-md
 
+prepare:
+	dot docker-vocabulary.graphviz -oimg/docker-vocabulary.svg -Tsvg
+
+help:
+	cat Makefile

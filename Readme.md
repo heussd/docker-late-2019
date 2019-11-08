@@ -39,8 +39,6 @@ html.intro h1, html.intro p {
 
 by Timm Heuss
 
-<!--![](img/qr.png)--->
-
 ---
 
 ## Topics Covered
@@ -84,22 +82,7 @@ by Timm Heuss
 
 ### Docker Vocabulary
 
-<img src='https://g.gravizo.com/svg?
- digraph G {
-	 node [shape=plaintext,fontname="helvetica"]
-	 edge [shape=plaintext,fontname="helvetica"]
-	 bgcolor="transparent";
-	 color="white";
-	 rankdir=LR;
-			Dockerfile -> Image [label="build"]
-			Image -> Container [label="run"]
-			Image -> "Docker Registry" [label="push"]
-			"Docker Registry" -> Image [label="pull"]
-			Container -> Service [arrowhead=none, style=dashed]
-			"Compose / Swarm" -> Service [label="describes"]
-			"Compose / Swarm" -> Image [label="refers"]
- }
-' style="width: 100% !important"/>
+![](img/docker-vocabulary.svg)
 
 
 ---
