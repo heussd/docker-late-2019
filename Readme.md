@@ -1,39 +1,5 @@
-<style>
-
-img { background-color: transparent !important; width: 90%}
-
-img[alt="Hierarchy and Scope of Variables in Docker"] { width: 70%}
-img[alt="Yo Dawg I heard you like Equal Signs"] { width: 30%}
-img[alt="docker-logo"] { width: 40%}
-img[alt="docker-mounts"] { width: 60%}
-img[alt="dive"] { width: 70%}
-img[alt="lazydocker"] { width: 70%}
-img[alt="container"] { width: 60%}
-img[alt="dcc"] { width: 40% }
-img[alt="docker-vocabulary"] { width: 100% }
-img[alt="qrcode"] { width: 40% }
-img[alt="docker-pitfalls"] {
-	transform: rotate(180deg);
-	object-fit: cover;
-	object-position: 0 0;
-	width: 170px;
-	height: 120px;
-}
-
-.intro h1, .intro p, .intro a {
-	//color: white !important;
-	#text-shadow: 3px 3px 4px #1a1a1a
-}
-
-html.intro h1, html.intro p {
-	background-color: rgba(255,255,255,0.8);
-}
-
-</style>
-
-<!-- .slide: data-separator-vertical="by" data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
-
 # Docker Late 2019
+<!-- .slide: data-separator-vertical="by" data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
 
 by Timm Heuss
 
