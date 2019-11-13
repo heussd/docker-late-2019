@@ -1,5 +1,5 @@
 present:
-	reveal-md Readme.md -w --theme ./reveal-style-th.css
+	reveal-md Readme.md -w --theme ./reveal-style-th.css --separator "^\n\n\n" --vertical-separator "^\n\n"
 
 submodule:
 	git submodule update --init --remote --recursive

@@ -1,5 +1,6 @@
 @import url("reveal.js/css/theme/white.css");
 
+
 .col {
     display: flex;
 }
@@ -21,4 +22,18 @@ img {
 }
 h2, h3, h4, h5, h6 {
 	text-shadow: 1px 1px 1px #1a1a1a !important
+}
+
+.twocolul ul {
+	columns: 2;
+}
+.twocolul ul ul {
+	columns: 1 !important;
+}
+
+.twocolul ol {
+	columns: 2;
+}
+.twocolul ol ul {
+	columns: 1 !important;
 }

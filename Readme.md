@@ -1,10 +1,5 @@
 <style>
-.col {
-    display: flex;
-}
-.col div {
-    flex: 1;
-}
+
 img { background-color: transparent !important; width: 90%}
 
 img[alt="Hierarchy and Scope of Variables in Docker"] { width: 70%}
@@ -15,6 +10,8 @@ img[alt="dive"] { width: 70%}
 img[alt="lazydocker"] { width: 70%}
 img[alt="container"] { width: 60%}
 img[alt="dcc"] { width: 40% }
+img[alt="docker-vocabulary"] { width: 100% }
+img[alt="qrcode"] { width: 40% }
 img[alt="docker-pitfalls"] {
 	transform: rotate(180deg);
 	object-fit: cover;
@@ -31,20 +28,19 @@ img[alt="docker-pitfalls"] {
 html.intro h1, html.intro p {
 	background-color: rgba(255,255,255,0.8);
 }
+
 </style>
 
-<!-- .slide: data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
+<!-- .slide: data-separator-vertical="by" data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
 
 # Docker Late 2019
 
 by Timm Heuss
 
----
 
-## Topics Covered
 
-<div class="col">
-<div>
+## Agenda
+<!-- .slide: data-state="twocolul" -->
 
 - Recap: What’s Docker
 - BuildKit
@@ -54,22 +50,16 @@ by Timm Heuss
 - Handling Large Models
 - ARG vs. ENV vs. .env vs. env_file
 - Docker Secrets
-
-</div>
-
-<div>
-
 - ENTRYPOINT vs. CMD vs. RUN
-- BuildKit Mount Types / “Application Caching”
+- Experimental BuildKit Mount Types
 - Multi-Stage Docker Images
 - Useful Tools: dive, lazydocker, dcc
 - Multi-Architecture Images
 - Docker Pitfalls
-</div>
-</div>
 
-🤚 Includes a hands-on session in which we interactively optimize an existing Dockerfile
----
+🤚 In a hands-on session we will interactively optimize an existing Dockerfile
+
+
 
 ## Recap: What's Docker?
 
@@ -77,15 +67,24 @@ by Timm Heuss
 
 [https://www.docker.com/resources/what-container](https://www.docker.com/resources/what-container)
 
-----
-
 
 ### Docker Vocabulary
 
-![](img/docker-vocabulary.svg)
+![docker-vocabulary](img/docker-vocabulary.svg)
 
 
----
+### Numbers and Facts
+
+- 4 of 5 container runtimes are Docker
+- 3 of 4 container orchestrators are Kubernetes
+- 1 of 5 containers live less than 1 minute
+- Half of the containers live less than 5 minutes
+- Half of the images have security flaws
+- Half of the images are replaced within 1 week
+
+Source: [Sysdig 2019 Container Usage Report: New Kubernetes and security insights](https://sysdig.com/blog/sysdig-2019-container-usage-report/)
+
+
 
 ## New in the Docker World: BuildKit
 
@@ -96,54 +95,44 @@ BuildKit is a new building and packaging software for Docker
 - 🔥 Multi CPU architecture builds (e.g. linux/amd64, linux/arm)
 
 
-----
-### How to enable
+### Enabling BuildKit on your machine (Docker >= 18.09):
 
-Enabling BuildKit on your machine (Docker >= 18.09):
-- Command line
-	
-		docker buildx
+Command line
+
+	docker buildx
 		
-- Environment Variable
 	
-		DOCKER_BUILDKIT=1
-		
-- Daemon config
+	DOCKER_BUILDKIT=1 docker ...
 
-		{ "features": { "buildkit": true }}
+Daemon config
+
+	{ "features": { "buildkit": true }}
 
 
----
 
 ## The most important Docker rules
 
 1. Reduce the size of our shipment, because it reduces
-	- … the amount of required (cloud) storage
+	- … the amount of required storage
 	- … transferring times
 	- … the attack surface
-
 1. Reduce build time, because
 	- …	only fast builds will be executed frequently
-
 1. Make builds reproducible
 
 
-In contrast to a widespread opinion, I don’t care about the number of layers you use
 
----
 ## Dockerfile + docker-compose.yml
 
 Standardized and reproducable definition of image name, runtime parameters, ports, volumes etc…
 
 
-----
 ### Via Command Line only
 
 	docker build . -t myveryspecialname:1.0
 	
 	docker run -p “8080:8080” -v “/var/folder:/sth:ro” myveryspecialname:1.0
-	
-	
+		
 - 👎 cannot be put into git
 - 👎 easy to mess-up
 - 👎 hard to remember
@@ -151,23 +140,23 @@ Standardized and reproducable definition of image name, runtime parameters, port
 
 Custom builds scripts / makefiles are helping, but they are introducing individualism that is unwanted here
 
-----
+
 ### Using the Docker-Compose file
 
 <div class="col">
 <div>
 Command Line
 	
-	//old way: docker-compose build
-	
-	docker buildx bake
-	
-	docker-compose up
+~~~bash
+# old way: docker-compose build
+docker buildx bake	
+
+docker-compose up
+~~~
 
 </div>
 <div>
 docker-compose.yml
-
 
 ~~~yaml
 image: myveryspecialname:1.0
@@ -178,17 +167,15 @@ volumes:
  - "/var/somespecialfolder:/sth:ro"
 ~~~
 
-
 </div>
 </div>
-
 
 - 👍 can be versioned
 - 👍 syntax highlighting and check
 - 👍 write and forget - no remembering needed!
 - 👍 works on all machines with every image 
 
----
+
 
 ## Bind Mounts and Volumes
 
@@ -196,23 +183,32 @@ volumes:
 
 [https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/)
 
-----
-#### Bind Mounts
 
-Allow to share a file or folder with the host system
+### Bind Mounts vs Volumes
+<!-- .slide: data-state="twocolul" -->
 
-- typically used for persisting database / index / setting files
-- Performance?!
+- Bind Mounts allow to share a file or folder with the host system
+  - Useful for config files or important data
+  - Allows to ship external data alongside docker-compose.yml
+- Volumes allow to persist a file or folder across container instances
+  - Useful for temp data such as indecies or caches
+  - Not really portable
+
+
+### Performance of Bind Mounts
+
+- Performance depends on the guaranteed level of consistency
 	- “like native” on Linux (VFS)
 	- “it depends” on macOS / Windows (non-VFS hosts)
-- since 17.04, we have more options to define consistency expectation:
-	- `consistent` - default, perfect consistency, can be expensive ⚠️
+- the consistency expectation can be defined (since 17.04)
+	- `consistent` - default, perfect consistency, expensive
 	- `cached` - the host’s view is authoritative
 	- `delegated` - the container’s view is authoritative
-----
 
-### Verbose bind mount syntax 
+Source: [https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/)
 
+
+### Example for an Bind Mount (new syntax)
 ~~~yml
 services:
   service:
@@ -224,95 +220,84 @@ services:
         read_only: true
 ~~~
 
-----
-#### Volumes
 
-allow to persist a file or folder across container instances
-- typically used for persisting (regenerated)  index / cache files
-- volumes are not easily explorable / transferable to different hosts
-
-
----
 
 ## Handling Large Data Dependencies
 
-The real question is: what is your load scenario?
+The real question is: what is your usage scenario?
 
 ![](img/large-data-dependency.svg)
 
 
-----
+### Strategy to tackle large data dependencies
 
-### 4 Strategies on Tackling large Data dependencies
-
-- Bake it into the image
-	- Docker images should be self-contained and easy to use
-	- Code and Data Dependency are logically tightly coupled, so why not ship them coupled together?
-
-- Cluster architectures
-	- Some Databases and Search Engines can be operated as cluster
-	- These applications know best how to scale themselves
-
-- Model Server
-	- [TensorFlow Serving](https://www.tensorflow.org/tfx/guide/serving) provides versioning, hosting and provisioning capabilities for machine learning models
-	- ML lifecycle is better supported
-
-- Distributed File Systems
-	- There are some file systems for distributed use, such as Ceph-FS or GlusterFS
+Bake it into the image 🤔
 
 
----
+### Further Strategies on Tackling large Data dependencies
+<!-- .slide: data-state="twocolul" -->
+
+- Streaming Platforms - [Apache Kafka](https://kafka.apache.org/), [RabbitMQ](https://www.rabbitmq.com/), ...
+- Database Clusters - [Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/modules-cluster.html), [PostgreSQL](https://www.postgresql.org/docs/9.0/creating-cluster.html), ...
+- Database-as-a-Service - [Azure SQL Database](https://azure.microsoft.com/de-de/services/sql-database/), [Amazon DocumentDB](https://aws.amazon.com/de/documentdb/), ...
+- Blob Storages - [Amazon S3](https://aws.amazon.com/de/s3/), [Google Cloud Storage](https://cloud.google.com/storage/), ...
+- Model Server - [TensorFlow Serving](https://www.tensorflow.org/tfx/guide/serving), [Clipper](http://clipper.ai/), [TensorRT](https://github.com/NVIDIA/tensorrt-inference-server)
+- Distributed File Systems - [Ceph-FS](https://docs.ceph.com/docs/master/cephfs/), [GlusterFS](https://www.gluster.org/), ...
+
+
 
 ## ARG vs. ENV vs. .env vs. env_file
 
 Hierarchy and scope of variables in Docker
 
-
 ![Hierarchy and Scope of Variables in Docker](img/docker-env-scopes.svg)
 
 
-----
-
 - Dockerfile variable definitions
 	- Arguments (valid during build)
-	
-			ARG myvar=variable
-			
-	- Environment Variables (valid during build and run)
-	
-			ENV myvar=variable
+
+		~~~dockerfile
+		ARG myvar=variable
+		~~~
+	- Environment variables (valid during build and run)
+
+		~~~dockerfile
+		ENV myvar=variable
+		~~~
 
 - Docker-Compose variable definitions
-	- Environment Statement (valid during run)
-	
-			environment:
-				myvar1=variable
-				myvar2=${SYSENV:-fallback}
-				
-	- `env_file` Statement (valid during run)
-	
+	- Environment statement (valid during run)
+		~~~yaml
+		environment:
+			myvar=${SYSENV:-variable}
+		~~~
+
+	- env_file statement (valid during run)
+
 			env_file: env_file_name
-- Do not use any of this for passwords!
 
 
----
+
 ## Passwords in Environment Variables?
 
-This is considered to be bad practice!
+This violates the **principle of least privilege** and the **principle of least astonishment**:
+
+1. Environment variables are clear text
+1. Environment variables are easy to read on the host
+1. Environment variables are inherited to all child-processes
+1. Environment variables are often logged for debugging
+
+Source: [https://diogomonica.com/2017/03/27/why-you-shouldnt-use-env-variables-for-secret-data/](https://diogomonica.com/2017/03/27/why-you-shouldnt-use-env-variables-for-secret-data/)
 
 
-They violate the **principle of least privilege** and the **principle of least astonishment**:
+### People do not seem to care
 
-1. Everyone can find out the environment of a process
-1. Environments are often printed for error reporting or debugging purposes
-1. Environments are inherited to all child-processes
-1. Misuse is too easy
-
-----
 ![](img/docker-compose-passwords.png)
 
----
+
+
 ## Secrets
+<!-- .slide: data-background="red" data-background-transition="zoom" -->
 
 Handling secrets the _Docker way_ involves two steps:
 
@@ -320,7 +305,6 @@ Handling secrets the _Docker way_ involves two steps:
 2. Adjust our Docker image entrypoint
 
 
-----
 ### Use what Docker provided to us for passwords
 
 1. Define the secret with a **name** and with a **reference to a txt file**
@@ -338,9 +322,8 @@ Handling secrets the _Docker way_ involves two steps:
 
 		/run/secrets/name
 
-----
-### Adjust our Docker image entrypoint
 
+### Adjust our Docker image entrypoint
 
 4. Instead of defining the password via environment variable
 
@@ -358,43 +341,40 @@ Handling secrets the _Docker way_ involves two steps:
 #  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
 file_env() {
 ~~~
----
+
 
 
 ## RUN, ENTRYPOINT, CMD
 
-<div class="col">
-<div>
 
-**RUN**
-- Executed during build phase
-- Commits a new layer to the Docker image
-- Example: Install dependencies
-	
-		RUN apt-get install glibc
+| Dockerfile statement | build phase | run phase | purpose |
+|---|---|---|---|
+| RUN | ✅ | | Execute an command, commit result into image |
+| ENTRYPOINT |  | ✅ | Specify what to do when container is executed |
+| CMD |  | ✅ | Augment ENTRYPOINT with addition parameters |
 
-</div>
-<div>
 
-**ENTRYPOINT**
-- Executed during ⚠️ run phase
-- Example: Define a server start 
+### Dockerfile
+~~~dockerfile
+RUN apt-get install glibc
 
-		ENTRYPOINT java /app.jar -serve
+ENTRYPOINT java /app.jar -serve
+CMD -Xmx4G
+~~~
 
-**CMD**
-- Allows to augment `ENTRYPOINT` with addition parameters
-- Example: Add additional parameters 
+### docker-compose.yml
+~~~yaml
+services:
+  service:
+	command: -Xmx=14G
+~~~
 
-		CMD -Xmx4G
 
-</div>
 
----
+## Experimental BuildKit Mount Types
 
-## New BuildKit Mount Types (experimental)
+<!-- .slide: data-background="https://i.giphy.com/90F8aUepslB84.gif" data-state="intro"-->
 
-![Yo Dawg I heard you like Equal Signs](https://i.imgflip.com/3f7xey.jpg)
 
 - A new experimental Dockerfile frontend syntax allows us to add cool new features to `RUN` commands:
 		
@@ -404,7 +384,8 @@ file_env() {
 
 		# syntax = docker/dockerfile:experimental
 
-----
+Source: [https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md)
+
 
 ### Bind mounts
 
@@ -412,9 +393,6 @@ file_env() {
 
 - Bind-mounts an external folder (read only)
 - Suitable for large file dependencies or source code
-
-
-----
 
 
 ### Cache mounts
@@ -427,192 +405,153 @@ file_env() {
 	
 	RUN --mount=type=cache,target=/root/.cache/go-build go build
 
-
 - Caches a specified folder across builds
 - Suitable for dependencies and repositories
 
-----
-### See also
 
-~~~dockerfile
-RUN --mount=type=secret
-~~~
-
-~~~dockerfile
-RUN --mount=type=ssh
-~~~
-
-
-[https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md)
-
----
 
 ## Multi-Stage - Dos and Don'ts
 
-<div class="col">
-<div>
-Good
-
-	FROM ubuntu as build
-	RUN … // build your stuff here
-	
-	FROM alpine
-	COPY --from=build artifact.bin /
-	
-	ENTRYPOINT ./artifact.bin
-	
-Recommended good practice
-
-
-</div>
-<div>
-Bad
-
+### Good
 
 ~~~dockerfile
-	FROM ubuntu as build
-	RUN … // build your stuff here
-	
-	FROM alpine as base
-	COPY --from=build artifact.bin /
-	
-	ENTRYPOINT ./artifact.bin
-	
-	FROM base as debug
-	ENV	debug=1
-	
-	FROM base as prod
-	ENV	debug=0
-	ENV prod=1
+FROM ubuntu as build
+RUN … // build your stuff here
+
+FROM scratch
+COPY --from=build artifact.bin /
+
+ENTRYPOINT ./artifact.bin
 ~~~
 
 
+### Bad
+
+	FROM ubuntu as build
+	RUN … // build your stuff here
+
+	FROM alpine as base
+	COPY --from=build artifact.bin /
+
+	ENTRYPOINT ./artifact.bin
+
+	FROM base as debug
+	ENV	debug=1
+
+	FROM base as prod
+	ENV	debug=0
+	ENV prod=1
+
 - ⚠️ Images cannot be distinguished by their build stage
 - ⚠️ Mix of configuration and the resulting build artifact
-</div>
-</div>
 
----
+
+
 ## Multi-Stage: Installing vs Base Images
 
 The work from others can be integrated more easily.
 
 Example scenario: The `git` command is required during the build of an image. What can we do?
 
-----
 
-### Ubuntu
+### 186MB - Ubuntu
 
-~~~dockerfile
-FROM ubuntu # 64 MB
-~~~
+	FROM ubuntu # 64 MB
 
-Install git
-
-~~~dockerfile
-# + 122 MB
-RUN   apt-get update && \
-      apt-get install -y git
-~~~
+	# + 122 MB
+	RUN   apt-get update && \
+		apt-get install -y git
 
 
-Install git, leave-out recommended stuff
+### 166MB - Ubuntu
 
-~~~dockerfile	
-# + 102 MB
-RUN   apt-get update && \
-      apt-get -y install --no-install-recommends \
-	  git
-~~~
+	FROM ubuntu # 64 MB
 
-Install git, leave-out recommended stuff, remove repository cache
-
-~~~dockerfile	
-# + 77 MB
-RUN   apt-get update && \
-      apt-get -y install --no-install-recommends \
-      git \
-      && rm -rf /var/lib/apt/lists/*
-~~~
-
-141 MB in total - 75% of the straight forward installation!
+	# + 102 MB
+	RUN   apt-get update && \
+		apt-get -y install --no-install-recommends \
+		git
 
 
-----
+### 141MB - Ubuntu
 
-### alpine
+	FROM ubuntu # 64 MB
 
-~~~dockerfile	
-FROM alpine # 5,6 MB
-~~~
+	# + 77 MB
+	RUN   apt-get update && \
+		apt-get -y install --no-install-recommends \
+		git \
+		&& rm -rf /var/lib/apt/lists/*
 
-Install git
+Only 75% of the original installation!
 
-~~~dockerfile	
-#  + 17 MB
-RUN   apk add --update git
-~~~
 
-Install git, don't cache repository
+### 22,6MB - alpine
 
-~~~dockerfile	
-# + 16 MB
-RUN   apk add --no-cache --update git
-~~~
+	FROM alpine # 5,6 MB
 
-21,6 MB in total - only 15% of the size of the smallest Ubuntu image 
+	#  + 17 MB
+	RUN   apk add --update git
 
-----
-#### alpine/git
 
+### 21,6MB - alpine
+
+	FROM alpine # 5,6 MB
+
+	# + 16 MB
+	RUN   apk add --no-cache --update git
+
+Only 15% of the size of the smallest Ubuntu image 
+
+
+### 28MB - alpine/git
 
 	FROM   alpine/git # 28 MB
 
-- No brainer
-- Use what others did better
 
-
----
 
 ## Maven Dockerfile Boilerplate 2019
 
-~~~dockerfile
-# syntax = docker/dockerfile:experimental
+	# syntax = docker/dockerfile:experimental
 
-FROM    maven:3.5.0-jdk-8-alpine as build
-WORKDIR /app
+	FROM    maven:3.5.0-jdk-8-alpine as build
+	WORKDIR /app
 
-RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
-		mvn package -DbuildDirectory=/target
+	RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
+			mvn package -DbuildDirectory=/target
+
+	FROM    openjdk:8-alpine
+	RUN     apk add --no-cache --update curl
+	WORKDIR /
+	COPY    --from=build /target/*-standalone.jar /app.jar
+
+	ENTRYPOINT ["java", "-jar", "/app.jar"]
+	CMD		-Xmx=2G
+
+	EXPOSE  8080
+
+	HEALTHCHECK   --interval=2m --timeout=10s CMD\
+				curl --fail http://0.0.0.0:8080/health || exit 1
 
 
-FROM    openjdk:8-alpine
-RUN     apk add --no-cache --update curl
-WORKDIR /
-COPY    --from=build /target/*-standalone.jar /app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-CMD		-Xmx=2G
-
-EXPOSE  8080
-
-
-HEALTHCHECK   --interval=2m --timeout=10s CMD\
-			curl --fail http://0.0.0.0:8080/health || exit 1
-~~~
-
-----
 ### Experimental Mounts for the Maven execution
 
-~~~dockerfile
-RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
-		mvn package -DbuildDirectory=/target
-~~~
+	RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
+			mvn package -DbuildDirectory=/target
 
 - Mount bind of the external Java-Source folder
 - No `COPY` of the sources, creation of one layer saved
 - No previous dependency management, creation of another layer saved
 - Cache mount of `/root/.m2/`, dependencies stored there will be cached across image builds
-- Maven must be instructed to use a different output directory, via `-DbuildDirectory=/target`, requires minor changes in the pom.xml:
+
+
+### Minor Maven modification
+
+Maven must be instructed to use a different output directory, via
+
+	-DbuildDirectory=/target
+	
+requires minor changes in the pom.xml:
 
 		<project
 			<properties>
@@ -620,21 +559,18 @@ RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
 			
 			<build>
 			    <directory>${buildDirectory}</directory>
-		
-----
+
+
 ### Minimal footprint curl installation
 
 	RUN     apk add --no-cache --update curl
 
-		
-----
+
 ### CMD augments ENTRYPOINT
 
 	ENTRYPOINT ["java", "-jar", "/app.jar"]
 	CMD		-Xmx=2G
 	
-
-- Combinational use of `CMD` and `ENTRYPOINT`
 - Allows to override application-specific parameters easily, without messing arround with the application execution
 - For example, it is easy to assign more heap via docker-compose:
 
@@ -646,24 +582,20 @@ RUN     --mount=target=. --mount=type=cache,target=/root/.m2/ \
 		  	command: -Xmx=4G
 
 
-----
 ### Built-in Healthcheck
 
-~~~dockerfile
-HEALTHCHECK   --interval=2m --timeout=10s CMD\
-			curl --fail http://0.0.0.0:8080/health ||  exit 1
-~~~	
+	HEALTHCHECK   --interval=2m --timeout=10s CMD\
+				curl --fail http://0.0.0.0:8080/health ||  exit 1
 			
 The container knows best how to monitor its health
 
 
----
 
 ## Nice Tools
 
 dive, lazydocker, dcc
 
-----
+
 ### Dive
 
 ![dive](https://raw.githubusercontent.com/wagoodman/dive/master/.data/demo.gif)
@@ -672,7 +604,7 @@ A tool for exploring a docker image, layer contents, and discovering ways to shr
 
 [https://github.com/wagoodman/dive](https://github.com/wagoodman/dive)
 
-----
+
 ### lazydocker
 
 ![lazydocker](https://raw.githubusercontent.com/jesseduffield/lazydocker/master/docs/resources/demo3.gif)
@@ -682,7 +614,6 @@ A simple terminal UI for both docker and docker-compose.
 [https://github.com/jesseduffield/lazydocker](https://github.com/jesseduffield/lazydocker)
 
 
-----
 ### dcc
 
 ![dcc](img/dcc.gif)
@@ -692,46 +623,43 @@ Builds and launches docker-compose services, monitors their output using multita
 [https://github.com/heussd/dotfiles/blob/master/scripts/.scripts/dcc](https://github.com/heussd/dotfiles/blob/master/scripts/.scripts/dcc)
 
 
----
+
 ## Hands-On Session
 
 Demo Scenario: Publishing a Markdown file as static webpage with two dependencies
 
 1. Clone [md-page](https://github.com/oscarmorrison/md-page) - JS that converts Markdown to HTML on the fly
-2. Clone [my-way-to-view-things](https://github.com/heussd/my-way-to-view-things) - Timm's prefered CSS for text reading
-3. Combine Readme.md + JS + CSS
-4. Serve in static Web server
+1. Clone [my-way-to-view-things](https://github.com/heussd/my-way-to-view-things) - Timm's prefered CSS for text reading
+1. Combine Readme.md + JS + CSS
+1. Serve in static Web server
 
-----
+
 ### We start with a Dockerfile like this
 
-~~~dockerfile
-FROM ubuntu
+	FROM ubuntu
 
-# Install requirements
-RUN   apt-get update && apt-get install -y git lighttpd
+	# Install requirements
+	RUN   apt-get update && apt-get install -y git lighttpd
+	WORKDIR /var/www/html/
 
-WORKDIR /var/www/html/
+	# Pull dependencies
+	RUN     git clone https://github.com/oscarmorrison/md-page
+	RUN		git clone https://github.com/heussd/my-way-to-view-things
 
-# Pull dependencies
-RUN     git clone https://github.com/oscarmorrison/md-page
-RUN		git clone https://github.com/heussd/my-way-to-view-things
+	# Copy sources
+	COPY	img ./img/
+	COPY    Readme.md ./
 
-# Copy sources
-COPY	img ./img/
-COPY    Readme.md ./
+	# Build artifact
+	RUN 	echo '<script src="md-page/md-page.js"></script><noscript>' > 'index.html' && \
+				echo '<link rel="stylesheet" type="text/css" href="my-way-to-view-things/text-reading.css" media="screen" />' >> 'index.html' && \
+				echo '' >> 'index.html' && \
+				cat "Readme.md" >> 'index.html'
 
-# Build artifact
-RUN 	echo '<script src="md-page/md-page.js"></script><noscript>' > 'index.html' && \
-			echo '<link rel="stylesheet" type="text/css" href="my-way-to-view-things/text-reading.css" media="screen" />' >> 'index.html' && \
-			echo '' >> 'index.html' && \
-			cat "Readme.md" >> 'index.html'
+	# Serve artifact
+	CMD ["lighttpd", "-D", "-f", "/etc/lighttpd/lighttpd.conf"]
 
-# Serve artifact
-CMD ["lighttpd", "-D", "-f", "/etc/lighttpd/lighttpd.conf"]
-~~~
 
-----
 ### Deep-dive
 
 1. apt command
@@ -741,7 +669,6 @@ CMD ["lighttpd", "-D", "-f", "/etc/lighttpd/lighttpd.conf"]
 	1. We notice the `.git` folders
 
 
-----
 ### Fixing the Dockerfile
 
 #### Replace the git commands
@@ -760,54 +687,42 @@ RUN		git clone URL /git && \
 #### Build with BuildKit
 
 
----
-## Demo Recap
+
+## Hands-on Recap
 
 By following good practices and  🔥 Docker features, we drastically reduced build time and image size
 
-
-<div class="col">
-<div>
-<span style="font-size:85pt">97%</span><br/>
-
-size reduction
-</div>
-<div>
-<span style="font-size:85pt">91%</span><br/>
-
-build time reduction
-</div>
-</div>
-
-- Decreased the attack surface, build time and image size
+- 97% size reduction
+- 91% build time reduction
+- Decreased the attack surface
 - Increase scalability and reproducability
 
 
----
+
 ## Multi-Architecture Images
 
 ![](img/docker-multi-architecture.png)
 
 Image Source: [https://engineering.docker.com/2019/04/multi-arch-images/](https://engineering.docker.com/2019/04/multi-arch-images/)
 
-----
+
 ### Image Manifests
 
 ![](img/docker-manifests.png)
 
 Image Source: [https://www.docker.com/blog/multi-arch-all-the-things/](https://www.docker.com/blog/multi-arch-all-the-things/)
 
-----
-### How manifest lists are shown
+
+### How manifest lists look like
 
 ![](img/dockerhub-newsboat.png)
 
-----
-### How manifests are shown
+
+### How manifests look like
 
 ![](img/dockerhub-datasette.png)
 
-----
+
 ### How to use
 
 ~~~makefile
@@ -819,58 +734,49 @@ clean:
 	docker buildx rm nubuilder
 ~~~
 
-No support for `docker-compose` or `bake` yet 😔
 
 
-
----
 ## Docker Pitfalls
+<!-- .slide: data-background="https://www.handwerk.com/drimage/1120/630/3277/hide-pain-harold-title-red%20-web.jpg" data-state="intro"-->
 
-![docker-pitfalls](img/horizontal_large.png)
-
-----
 
 ### Terminology: Run 
-`RUN` in `Dockerfiles` executes code and commits a new layer during **image build**.
 
-`docker run` executes **containers**.
+- `RUN` in `Dockerfiles` runs **code during image build**.
+- `docker run` runs **containers**.
 
-----
 
 ### Terminology: Arguments, Commands
-**`ARGS`** are environment variables with the scope of the image build phase.
 
-Runtime **arguments** for a image can be specified using **`CMD`** (`Dockerfile`) or **`commands`** (docker-compose).
+- **`ARGS`** are environment variables during the build phase.
+- Runtime **arguments** can be specified using **`CMD`** (`Dockerfile`) or **`commands`** (docker-compose).
+- **Docker commands** are command line parameters to the Docker binary (such as `docker images`).
 
-Docker **commands** are command line parameters to the Docker binary (such as `docker images`)
 
-----
+### Scope of Environment Variables
 
-### Different builds
+- Environment variables in Dockerfile are respected during build.
+- Environment variables in docker-compose are ignored during build (even if you build with `docker-compose build`)
 
-docker environment variables are respected during build.
-
-docker-compose environment variables are ignored during build, even if you build with `docker-compose build`
-
-----
 
 ### Terminology: Volumes and Mounts
 
-[**Volumes** are different from **bind mounts**](https://docs.docker.com/storage/volumes/), but both are specified, used and maintained with the keyword **volumes**.
-
-**Bind mounts** are **volumes** of the **type bind** in docker-compose:
+- [**Volumes** are different from **bind mounts**](https://docs.docker.com/storage/volumes/)
+- Both are specified, used and maintained with the keyword **volumes**.
+- **Bind mounts** are **volumes** of the **type bind** in docker-compose:
 
 		volumes:
 	      - type: bind
 
-----
 
 ### Volumes during build
 
-Volumes persist writes during run, but forget writes during build.
-
-Writes during build are ignored silently without any warning.
-
-You cannot be sure what folder is an volume, as images can define arbitrary folders as volumes.
+- Volumes persist writes during run, but not during build.
+- Writes during build are silently ignored without any warning.
+- You cannot be sure what folder is an volume, as images can define arbitrary folders as volumes.
 
 
+
+![qrcode](img/qrcode.png)
+
+[https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
