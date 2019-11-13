@@ -743,6 +743,11 @@ clean:
 
 
 
+### Conclusion
+
+- Build smaller Docker images faster
+- Cache all the things
+
 ![qrcode](img/qrcode.png)
 
 [https://github.com/heussd/docker-late-2019](https://github.com/heussd/docker-late-2019)
