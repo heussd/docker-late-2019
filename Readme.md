@@ -743,10 +743,12 @@ clean:
 
 
 
-### Conclusion
+## Conclusion
 
-- Build smaller Docker images faster
+- Build smaller images faster
 - Cache all the things
+- Be multi-arch friendly
+
 
 ![qrcode](img/qrcode.png)
 
