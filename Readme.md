@@ -151,7 +151,6 @@ volumes:
 
 
 ### Bind Mounts vs Volumes
-<!-- .slide: data-state="twocolul" -->
 
 - Bind Mounts allow to share a file or folder with the host system
   - Useful for config files or important data
@@ -195,13 +194,12 @@ The real question is: what is your usage scenario?
 ![](img/large-data-dependency.svg)
 
 
-### Strategy to tackle large data dependencies
+### One strategy to tackle large data dependencies
 
-Bake it into the image 🤔
+- Bake it into the image 🤔
 
 
-### Further Strategies on Tackling large Data dependencies
-<!-- .slide: data-state="twocolul" -->
+### Further strategies to tackle large data dependencies
 
 - Streaming Platforms - [Apache Kafka](https://kafka.apache.org/), [RabbitMQ](https://www.rabbitmq.com/), ...
 - Database Clusters - [Elastic](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/modules-cluster.html), [PostgreSQL](https://www.postgresql.org/docs/9.0/creating-cluster.html), ...
@@ -300,13 +298,30 @@ Handling secrets the _Docker way_ involves two steps:
 		SQL_DB_PASSWORD_FILE=/run/secrets/sql-db-password
 1. Custom entrypoint scripts resolve the path in SQL_DB_PASSWORD_FILE and create a local variable SQL_DB_PASSWORD with its content. Example: [MySQL Entrypoint](https://github.com/docker-library/mysql/blob/master/5.6/docker-entrypoint.sh)
 
+
 ~~~bash
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
 #  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
 file_env() {
+	local var="$1"
+	local fileVar="${var}_FILE"
+	local def="${2:-}"
+	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+		mysql_error "Both $var and $fileVar are set (but are exclusive)"
+	fi
+	local val="$def"
+	if [ "${!var:-}" ]; then
+		val="${!var}"
+	elif [ "${!fileVar:-}" ]; then
+		val="$(< "${!fileVar}")"
+	fi
+	export "$var"="$val"
+	unset "$fileVar"
+}
 ~~~
+[MySQL entrypoint script](https://github.com/docker-library/mysql/blob/master/5.6/docker-entrypoint.sh)
 
 
 
@@ -745,7 +760,7 @@ clean:
 
 ## Conclusion
 
-- Build smaller images faster
+- Build smaller images, faster
 - Cache all the things
 - Be multi-arch friendly
 

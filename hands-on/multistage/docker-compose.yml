@@ -1,0 +1,8 @@
+version: "3.7"
+
+services:
+  service:
+    image: stagetest
+    build:
+      context: .
+      target: dev2

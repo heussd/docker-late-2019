@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  service:
+    image: lala
+    build: .
+    environment: 
+      - myvar=${LOL:-OVERWRITE}
+      - important="HEY"
+    #env_file: env_file_name
+    
