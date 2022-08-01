@@ -1,7 +1,6 @@
-# Docker Late 2019
 <!-- .slide: data-separator-vertical="by" data-background="https://images.pexels.com/photos/163726/belgium-antwerp-shipping-container-163726.jpeg" data-state="intro"-->
 
-by Timm Heuss
+<!--PYSPELL-BEGIN-IGNORE-->
 
 
 
